@@ -178,6 +178,66 @@ This analysis report is licensed under the MIT License. See [LICENSE](LICENSE) f
 
 The analyzed Claude Code source code is licensed by Anthropic under its own terms.
 
+## ⚖️ Disclaimer & Copyright Notice
+
+### Copyright Attribution
+
+**Claude Code** and all analyzed source code are copyrighted by **Anthropic, PBC**. This repository contains analysis reports and documentation derived from examining the Claude Code source code, but does NOT contain the original Claude Code source files.
+
+### Educational Purpose Only
+
+This project is created **strictly for learning, educational, and research purposes only**. The analysis reports are intended to:
+
+- Help developers understand AI agent architecture and design patterns
+- Provide insights into production-grade TypeScript codebases
+- Demonstrate best practices for AI-powered development tools
+- Assist in security research and vulnerability analysis
+
+### No Affiliation
+
+This project is **NOT officially affiliated with, endorsed by, or connected to Anthropic**. All analysis content represents the independent observations and interpretations of the contributors.
+
+### Copyright Complaints & Takedown Requests
+
+If you believe this project infringes on any copyright or should be taken down:
+
+1. **File an Issue**: Please open an issue in this repository's [Issues](../../issues) section
+2. **Provide Evidence**: Include documentation showing:
+   - Your ownership or authorized representation
+   - Specific content that infringes on your rights
+   - Proposed resolution (takedown, modification, attribution, etc.)
+3. **Response Time**: We will respond to all legitimate requests within **7 business days**
+
+Upon receipt of a valid copyright complaint, we will:
+- Promptly remove or modify the allegedly infringing content
+- Notify the reporter of the actions taken
+- Take reasonable steps to prevent recurrence
+
+### Legal Disclaimers
+
+**NO WARRANTY**: The analysis reports are provided "AS IS" without warranty of any kind, express or implied.
+
+**ACCURACY**: While we strive for accuracy, the analysis may contain errors or omissions. Users should verify critical information independently.
+
+**NO LEGAL ADVICE**: This project does not constitute legal advice. Consult with qualified legal counsel for copyright and licensing questions.
+
+**USE AT YOUR OWN RISK**: Users of this analysis assume all risks associated with its use.
+
+### Compliance Statement
+
+This repository respects intellectual property rights and complies with applicable copyright laws, including:
+
+- **DMCA (Digital Millennium Copyright Act)**: We respond to valid DMCA takedown notices
+- **Berne Convention**: International copyright standards
+- **Fair Use**: Educational use under applicable copyright exceptions
+- **Open Source Licenses**: Compliance with MIT, Apache, GPL, etc., as applicable
+
+### Contact for Legal Matters
+
+For legal inquiries unrelated to copyright takedowns, please contact through GitHub Issues with the label `legal-inquiry`.
+
+---
+
 ## 🤝 Contributing
 
 This is a static analysis report repository. For corrections or updates to the analysis:
