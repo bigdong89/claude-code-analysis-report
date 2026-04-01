@@ -24,6 +24,7 @@ Claude Code is a sophisticated AI agent system that extends the basic agent loop
 | **[ANALYSIS_REPORT_CN.html](ANALYSIS_REPORT_CN.html)** | Interactive HTML report (Chinese) | HTML/Chart.js | 80KB |
 | **[ANALYSIS_REPORT_EN.html](ANALYSIS_REPORT_EN.html)** | Interactive HTML report (English) | HTML/Chart.js | 81KB |
 | **[claude-code-architecture.md](claude-code-architecture.md)** | Reusable skill documentation | Markdown | 15KB |
+| **[SECURITY_AUDIT_REPORT.md](SECURITY_AUDIT_REPORT.md)** | Security audit and vulnerability analysis | Markdown | 25KB |
 
 ### Report Sections
 
@@ -111,10 +112,12 @@ claude-code-analysis-report/
 ├── README.md                      # This file
 ├── LICENSE                        # MIT License
 ├── .gitignore                     # Git ignore rules
+├── CONTRIBUTING.md                # Contribution guidelines
 ├── ANALYSIS_REPORT.md             # Markdown report
 ├── ANALYSIS_REPORT_CN.html        # Chinese HTML report
 ├── ANALYSIS_REPORT_EN.html        # English HTML report
-└── claude-code-architecture.md    # Architecture skill doc
+├── claude-code-architecture.md    # Architecture skill doc
+└── SECURITY_AUDIT_REPORT.md       # Security audit report
 ```
 
 ## 🔧 Technology Stack
