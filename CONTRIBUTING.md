@@ -2,6 +2,25 @@
 
 Thank you for your interest in contributing to the Claude Code Analysis Report! This document provides guidelines for contributing.
 
+## ⚠️ Important Copyright Notice
+
+**Before contributing, please understand:**
+
+- **Claude Code** source code is copyrighted by **Anthropic, PBC**
+- This repository contains **analysis reports only**, NOT the original Claude Code source
+- This project is for **educational purposes only** and is NOT officially affiliated with Anthropic
+- Any contributions must respect intellectual property rights and applicable licenses
+
+By contributing, you agree that your contributions:
+1. Are your original work or properly attributed
+2. Do not infringe on Anthropic's copyrights or any third-party rights
+3. Align with the educational mission of this project
+4. Include appropriate attribution where due
+
+If you have concerns about copyright or licensing, please open an issue with the `copyright-inquiry` label BEFORE contributing.
+
+---
+
 ## 🎯 Contribution Areas
 
 We welcome contributions in the following areas:
