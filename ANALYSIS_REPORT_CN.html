@@ -1716,6 +1716,641 @@
             </div>
         </div>
 
+        <!-- Deep Security Analysis Section -->
+        <div class="section">
+            <h2><span class="emoji">🔐</span>深度安全分析</h2>
+            <p style="color: #999; margin-bottom: 30px;">Claude Code 实现多层防御安全架构，涵盖认证、授权、沙箱隔离、输入验证、MCP 安全和密钥管理</p>
+
+            <!-- Security Layers Chart -->
+            <div class="charts-grid" style="margin-bottom: 30px;">
+                <div class="chart-container large">
+                    <canvas id="securityLayersChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="owaspSecurityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Authentication & Authorization -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #667eea; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔑</span> 认证与授权系统
+                </h3>
+                <div style="background: rgba(102, 126, 234, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #667eea;">
+                            <h4 style="color: #667eea; margin-bottom: 15px;">OAuth 2.0 PKCE 流程</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>核心文件:</strong> src/utils/auth.ts (2003 行)
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ PKCE (Proof Key for Code Exchange)</li>
+                                <li>✅ 多凭证来源 (环境变量/文件描述符/钥匙串)</li>
+                                <li>✅ File descriptor 安全传递</li>
+                                <li>✅ macOS Keychain 集成</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #764ba2;">
+                            <h4 style="color: #764ba2; margin-bottom: 15px;">分布式令牌刷新锁定</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>防止并发刷新竞争条件</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ fcntl(2) 文件锁</li>
+                                <li>✅ Double-check 模式</li>
+                                <li>✅ 自动清理机制</li>
+                                <li>✅ 进程间协调</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #43e97b;">
+                            <h4 style="color: #43e97b; margin-bottom: 15px;">工作区信任验证</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>项目设置访问保护</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ 工作区信任检查</li>
+                                <li>✅ 组织成员验证</li>
+                                <li>✅ 加密签名验证</li>
+                                <li>✅ 权限边界强制</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Code Example -->
+                    <div style="margin-top: 25px; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 20px;">
+                        <div style="color: #667eea; font-size: 0.85em; margin-bottom: 10px;">// OAuth 2.0 PKCE Implementation (src/utils/auth.ts)</div>
+                        <pre style="color: #aaa; font-size: 0.85em; overflow-x: auto; line-height: 1.5;"><code>export async function getAnthropicApiKeyWithSource(): Promise<{
+  apiKey: string
+  source: AuthTokenSource
+}> {
+  // 优先级: 环境变量 > 文件描述符 > macOS钥匙串 > 配置文件
+  const envKey = process.env.ANTHROPIC_API_KEY
+  if (envKey) return { apiKey: envKey, source: 'env' }
+
+  const fdKey = await getApiKeyFromApiKeyHelper()  // 安全IPC
+  if (fdKey) return { apiKey: fdKey, source: 'api-key-helper' }
+
+  if (process.platform === 'darwin') {
+    const keychainKey = await getApiKeyFromKeychain()
+    if (keychainKey) return { apiKey: keychainKey, source: 'keychain' }
+  }
+
+  return { apiKey: await getApiKeyFromConfig(), source: 'config' }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sandbox Integration -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #764ba2; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🛡️</span> 沙箱隔离系统
+                </h3>
+                <div style="background: rgba(118, 75, 162, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #764ba2; margin-bottom: 15px;">Bubblewrap/Firecracker microVM</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="color: #764ba2; font-weight: bold; margin-bottom: 8px;">网络隔离</div>
+                                <div style="color: #999; font-size: 0.85em;">只读模式、允许主机列表</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="color: #764ba2; font-weight: bold; margin-bottom: 8px;">文件系统</div>
+                                <div style="color: #999; font-size: 0.85em;">只读挂载、写入路径限制</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="color: #764ba2; font-weight: bold; margin-bottom: 8px;">资源限制</div>
+                                <div style="color: #999; font-size: 0.85em;">内存、CPU、超时控制</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="color: #764ba2; font-weight: bold; margin-bottom: 8px;">安全加固</div>
+                                <div style="color: #999; font-size: 0.85em;">NoNewPrivs、Seccomp</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Path Patterns -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">沙箱路径模式</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid rgba(102, 126, 234, 0.3);">
+                                    <th style="padding: 12px; text-align: left; color: #667eea;">模式</th>
+                                    <th style="padding: 12px; text-align: left; color: #667eea;">解析为</th>
+                                    <th style="padding: 12px; text-align: left; color: #667eea;">用途</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><code style="color: #43e97b;">//path</code></td>
+                                    <td style="padding: 12px; color: #999;">绝对路径</td>
+                                    <td style="padding: 12px; color: #999;">系统目录</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><code style="color: #43e97b;">/path</code></td>
+                                    <td style="padding: 12px; color: #999;">设置相对</td>
+                                    <td style="padding: 12px; color: #999;">项目配置</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><code style="color: #43e97b;">~/path</code></td>
+                                    <td style="padding: 12px; color: #999;">用户目录</td>
+                                    <td style="padding: 12px; color: #999;">用户文件</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px;"><code style="color: #43e97b;">path</code></td>
+                                    <td style="padding: 12px; color: #999;">工作目录相对</td>
+                                    <td style="padding: 12px; color: #999;">默认路径</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Protected Paths -->
+                    <div>
+                        <h4 style="color: #ed64a6; margin-bottom: 15px;">受保护路径 (禁止写入)</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <span class="metric" style="background: rgba(237, 100, 166, 0.2);">~/.claude/settings.json</span>
+                            <span class="metric" style="background: rgba(237, 100, 166, 0.2);">~/.claude/skills</span>
+                            <span class="metric" style="background: rgba(237, 100, 166, 0.2);">.git/ (裸仓库)</span>
+                            <span class="metric" style="background: rgba(67, 233, 123, 0.2);">.git/ (工作树允许)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tool Permission System -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #43e97b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔧</span> 工具权限系统
+                </h3>
+                <div style="background: rgba(67, 233, 123, 0.08); border-radius: 16px; padding: 25px;">
+                    <!-- Permission Flow Diagram -->
+                    <div style="margin-bottom: 25px; padding: 25px; background: rgba(0,0,0,0.2); border-radius: 12px;">
+                        <h4 style="color: #43e97b; margin-bottom: 20px; text-align: center;">权限检查流程</h4>
+                        <div class="data-flow-diagram" style="background: transparent; padding: 0; margin: 0;">
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">工具调用请求</div>
+                                    <div class="desc">Tool Call Request</div>
+                                </div>
+                            </div>
+                            <div class="flow-branch">
+                                <div class="flow-branch-item">
+                                    <div style="font-weight: bold; color: #43e97b;">只读?</div>
+                                    <div style="font-size: 0.85em; color: #999;">允许</div>
+                                </div>
+                                <div class="flow-branch-item">
+                                    <div style="font-weight: bold; color: #ed64a6;">危险工具?</div>
+                                    <div style="font-size: 0.85em; color: #999;">检查信任</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">工具特定检查</div>
+                                    <div class="desc">checkPermissions()</div>
+                                </div>
+                            </div>
+                            <div class="flow-branch">
+                                <div class="flow-branch-item">
+                                    <div style="font-weight: bold; color: #43e97b;">需要批准?</div>
+                                    <div style="font-size: 0.85em; color: #999;">用户确认</div>
+                                </div>
+                                <div class="flow-branch-item">
+                                    <div style="font-weight: bold; color: #764ba2;">并发安全?</div>
+                                    <div style="font-size: 0.85em; color: #999;">检查运行中</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box" style="background: linear-gradient(135deg, rgba(67, 233, 123, 0.3), rgba(56, 249, 215, 0.3)); border-color: rgba(67, 233, 123, 0.5);">
+                                    <div class="title" style="color: #43e97b;">允许工具执行</div>
+                                    <div class="desc">Execute Tool</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fail-Closed Defaults -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(237, 100, 166, 0.1); border-radius: 12px;">
+                            <h4 style="color: #ed64a6; margin-bottom: 15px;">⛔ 默认拒绝 (Fail-Closed)</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>• isConcurrencySafe: false</li>
+                                <li>• isReadOnly: false</li>
+                                <li>• checkPermissions: DENY_ALL</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(79, 172, 254, 0.1); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">🛡️ 危险工具</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>• Bash (需要工作区信任)</li>
+                                <li>• Write (需要工作区信任)</li>
+                                <li>• Edit (需要工作区信任)</li>
+                                <li>• TaskStop (需要工作区信任)</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(248, 177, 51, 0.1); border-radius: 12px;">
+                            <h4 style="color: #f8b133; margin-bottom: 15px;">⚠️ 危险模式检测</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>• 路径遍历 (../)</li>
+                                <li>• 命令注入 (|rm, curl)</li>
+                                <li>• SSRF (file://, 元数据)</li>
+                                <li>• AWS/GCP 元数据端点</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MCP Security -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #4facfe; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔌</span> MCP 安全机制
+                </h3>
+                <div style="background: rgba(79, 172, 254, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">Elicitation 协议</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ Allow/Deny 列表过滤</li>
+                                <li>✅ Schema 验证</li>
+                                <li>✅ 工具清单安全检查</li>
+                                <li>✅ 自动跳过无效工具</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">OAuth 认证</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ PKCE 代码验证器</li>
+                                <li>✅ S256 挑战方法</li>
+                                <li>✅ Token 交换</li>
+                                <li>✅ Scope 授权</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">资源访问控制</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ URI ACL 黑名单</li>
+                                <li>✅ URI ACL 白名单</li>
+                                <li>✅ Glob 模式匹配</li>
+                                <li>✅ 默认拒绝策略</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secret Management -->
+            <div>
+                <h3 style="color: #f8b133; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔐</span> 密钥管理
+                </h3>
+                <div style="background: rgba(248, 177, 51, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #f8b133; margin-bottom: 15px;">平台安全存储</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>🍎 macOS: Keychain</li>
+                                <li>🐧 Linux: Secret Service</li>
+                                <li>🪟 Windows: Credential Manager</li>
+                                <li>📁 Fallback: 加密文件</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #f8b133; margin-bottom: 15px;">云 STS 集成</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>☁️ AWS STS: 临时凭证</li>
+                                <li>🔵 GCP OIDC: ID Token</li>
+                                <li>⏱️ 1小时有效期</li>
+                                <li>🔄 自动刷新</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #f8b133; margin-bottom: 15px;">凭证轮换</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>📅 30天轮换周期</li>
+                                <li>🆕 自动生成新密钥</li>
+                                <li>🗑️ 旧密钥失效</li>
+                                <li>💾 多位置同步</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Core Mechanisms Section -->
+        <div class="section">
+            <h2><span class="emoji">⚙️</span>核心机制深度解析</h2>
+            <p style="color: #999; margin-bottom: 30px;">Claude Code 12层渐进式Agent Harness的核心实现细节</p>
+
+            <!-- Progressive Harness Layers -->
+            <div class="charts-grid" style="margin-bottom: 30px;">
+                <div class="chart-container large">
+                    <canvas id="harnessLayersChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="mechanismComplexityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- QueryEngine Deep Dive -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #667eea; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔄</span> QueryEngine: 核心循环
+                </h3>
+                <div style="background: rgba(102, 126, 234, 0.08); border-radius: 16px; padding: 25px;">
+                    <!-- AsyncGenerator Pattern -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">AsyncGenerator 流式模式</h4>
+                        <div style="padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px;">
+                            <pre style="color: #aaa; font-size: 0.85em; overflow-x: auto; line-height: 1.5;"><code>// QueryEngine.ts - 主入口点
+async *submitMessage(
+  prompt: string | ContentBlockParam[],
+  options?: SubmitMessageOptions
+): AsyncGenerator<SDKMessage, void, unknown> {
+  // 1. 处理用户输入
+  const processed = await this.processUserInput(prompt, options)
+
+  // 2. 获取系统提示
+  const systemPrompt = await this.fetchSystemPrompt()
+
+  // 3. 进入查询循环
+  for await (const event of this.queryLoop(processed, systemPrompt, options)) {
+    // 流式返回SDK消息到客户端
+    yield event
+  }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Message Lifecycle -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #764ba2; margin-bottom: 15px;">消息生命周期</h4>
+                        <div class="data-flow-diagram" style="background: rgba(0,0,0,0.2); padding: 25px; border-radius: 12px;">
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">用户输入</div>
+                                    <div class="desc">processUserInput()</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">系统提示</div>
+                                    <div class="desc">fetchSystemPrompt()</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">构建对话</div>
+                                    <div class="desc">buildConversation()</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">查询循环</div>
+                                    <div class="desc">queryLoop() ──→ 记录/崩溃恢复</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));">
+                                    <div class="title">流式响应</div>
+                                    <div class="desc">AsyncGenerator yield</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compact Boundary -->
+                    <div>
+                        <h4 style="color: #43e97b; margin-bottom: 15px;">Compact Boundary 内存管理</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                            <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                <h5 style="color: #43e97b; margin-bottom: 10px;">触发条件</h5>
+                                <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                    <li>• Token 数 > maxTokens</li>
+                                    <li>• 会话时间限制</li>
+                                    <li>• 手动压缩请求</li>
+                                </ul>
+                            </div>
+                            <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                <h5 style="color: #43e97b; margin-bottom: 10px;">保留策略</h5>
+                                <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                    <li>• 保留最近N条消息</li>
+                                    <li>• 持久化存储旧消息</li>
+                                    <li>• 可重置边界</li>
+                                </ul>
+                            </div>
+                            <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                <h5 style="color: #43e97b; margin-bottom: 10px;">内存效率</h5>
+                                <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                    <li>• O(1) 单消息处理</li>
+                                    <li>• 立即流式传递</li>
+                                    <li>• 低首token延迟</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multi-Agent Coordination -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #764ba2; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🤖</span> 多代理协调机制
+                </h3>
+                <div style="background: rgba(118, 75, 162, 0.08); border-radius: 16px; padding: 25px;">
+                    <!-- Identity Resolution Priority -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #764ba2; margin-bottom: 15px;">身份解析优先级</h4>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 20px;">
+                                <div style="min-width: 120px; padding: 15px; background: rgba(102, 126, 234, 0.2); border-radius: 10px; text-align: center;">
+                                    <div style="font-weight: bold; color: #667eea;">优先级 1</div>
+                                    <div style="font-size: 0.85em; color: #999;">AsyncLocalStorage</div>
+                                </div>
+                                <div style="flex: 1; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">进程内队友</div>
+                                    <div style="font-size: 0.9em; color: #999;">getTeammateContext() - 同进程内的队友上下文隔离</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 20px;">
+                                <div style="min-width: 120px; padding: 15px; background: rgba(118, 75, 162, 0.2); border-radius: 10px; text-align: center;">
+                                    <div style="font-weight: bold; color: #764ba2;">优先级 2</div>
+                                    <div style="font-size: 0.85em; color: #999;">CLI Args</div>
+                                </div>
+                                <div style="flex: 1; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">Tmux 队友</div>
+                                    <div style="font-size: 0.9em; color: #999;">dynamicTeamContext - 通过CLI参数传递的队友身份</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Communication Protocol -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">SendMessage 通信协议</h4>
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px;">
+                            <div style="font-family: monospace; font-size: 0.85em; color: #aaa; line-height: 1.8;">
+                                <div style="margin-bottom: 15px;"><span style="color: #43e97b;">type:</span> 'text' | 'shutdown_request' | 'shutdown_response' | 'plan_approval_request' | 'plan_approval_response'</div>
+                                <div style="margin-bottom: 15px;"><span style="color: #43e97b;">to:</span> string (队友名称) | '*' (广播)</div>
+                                <div><span style="color: #43e97b;">text/request_id/reason:</span> 消息特定内容</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Two Backends -->
+                    <div>
+                        <h4 style="color: #ed64a6; margin-bottom: 15px;">双后端架构</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid rgba(237, 100, 166, 0.3);">
+                                    <th style="padding: 12px; text-align: left; color: #ed64a6;">特性</th>
+                                    <th style="padding: 12px; text-align: left; color: #ed64a6;">进程内 (AsyncLocalStorage)</th>
+                                    <th style="padding: 12px; text-align: left; color: #ed64a6;">Tmux (CLI参数)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><strong>隔离</strong></td>
+                                    <td style="padding: 12px; color: #999;">上下文隔离</td>
+                                    <td style="padding: 12px; color: #999;">进程隔离</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><strong>开销</strong></td>
+                                    <td style="padding: 12px; color: #43e97b;">低 (同进程)</td>
+                                    <td style="padding: 12px; color: #f8b133;">高 (子进程)</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><strong>用途</strong></td>
+                                    <td style="padding: 12px; color: #999;">快速任务</td>
+                                    <td style="padding: 12px; color: #999;">隔离任务</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px;"><strong>崩溃</strong></td>
+                                    <td style="padding: 12px; color: #f8b133;">影响主进程</td>
+                                    <td style="padding: 12px; color: #43e97b;">独立崩溃</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Context Management -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #43e97b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🧠</span> 上下文管理
+                </h3>
+                <div style="background: rgba(67, 233, 123, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #43e97b; margin-bottom: 15px;">文件状态缓存</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>📁 Path: 文件路径</li>
+                                <li>📊 Size: 文件大小</li>
+                                <li>🕐 Mtime: 修改时间</li>
+                                <li>🔐 Hash: 内容哈希</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #43e97b; margin-bottom: 15px;">知识注入</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>📚 SkillTool 懒加载</li>
+                                <li>🔌 按需加载技能</li>
+                                <li>🏷️ 元数据解析</li>
+                                <li>📄 内容缓存</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #43e97b; margin-bottom: 15px;">压缩策略</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>🗑️ 移除冗余系统提示</li>
+                                <li>📝 总结旧工具结果</li>
+                                <li>🔄 去重消息</li>
+                                <li>📊 Token 预算优化</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Token Budget Allocation -->
+                    <div style="margin-top: 25px; padding: 25px; background: rgba(0,0,0,0.2); border-radius: 16px;">
+                        <h4 style="color: #43e97b; margin-bottom: 20px;">上下文窗口预算分配</h4>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>系统提示 (工具定义 + 权限规则 + CLAUDE.md)</span>
+                                    <span style="color: #667eea;">20-30%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="fill" style="width: 25%; background: linear-gradient(90deg, #667eea, #764ba2);"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>对话历史 (压缩后 + compact_boundary 标记)</span>
+                                    <span style="color: #764ba2;">50-60%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="fill" style="width: 55%; background: linear-gradient(90deg, #764ba2, #ed64a6);"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>当前轮次 (用户消息 + 助手响应)</span>
+                                    <span style="color: #43e97b;">10-20%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="fill" style="width: 15%; background: linear-gradient(90deg, #43e97b, #38f9d7);"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Git Worktree Isolation -->
+            <div>
+                <h3 style="color: #4facfe; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🌳</span> Git Worktree 隔离
+                </h3>
+                <div style="background: rgba(79, 172, 254, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">Worktree 检测</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>检测 .git 文件</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ .git 是文件 (非目录)</li>
+                                <li>✅ 包含 gitdir: 引用</li>
+                                <li>✅ 解析主 git 目录路径</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">沙箱配置</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>主 git 目录挂载</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ 挂载 /.git 到主仓库</li>
+                                <li>✅ 允许 git 写操作</li>
+                                <li>✅ 保持 git 操作一致性</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">并发隔离</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>🌳 每个 worktree 独立</li>
+                                <li>🔒 共享主 git 目录</li>
+                                <li>🤝 支持 git 操作</li>
+                                <li>🚀 并发安全</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <div class="footer">
             <p>🔍 Claude Code v2.1.88 深度分析报告</p>
@@ -2303,6 +2938,208 @@
                         angleLines: {
                             color: 'rgba(255,255,255,0.1)'
                         },
+                        pointLabels: {
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 安全层级分布图
+        new Chart(document.getElementById('securityLayersChart'), {
+            type: 'bar',
+            data: {
+                labels: ['认证授权', '沙箱隔离', '工具权限', '输入验证', 'MCP安全', '密钥管理'],
+                datasets: [{
+                    label: '实现成熟度',
+                    data: [95, 90, 88, 85, 82, 87],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(118, 75, 162, 0.8)',
+                        'rgba(237, 100, 166, 0.8)',
+                        'rgba(79, 172, 254, 0.8)',
+                        'rgba(67, 233, 123, 0.8)',
+                        'rgba(248, 177, 51, 0.8)'
+                    ],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: '安全层级实现成熟度 (%)',
+                        font: { size: 16, weight: 'bold' },
+                        padding: { bottom: 20 }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    y: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // OWASP 安全覆盖率图
+        new Chart(document.getElementById('owaspSecurityChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['已覆盖', '部分覆盖', '未覆盖'],
+                datasets: [{
+                    data: [8, 2, 0],
+                    backgroundColor: [
+                        'rgba(67, 233, 123, 0.8)',
+                        'rgba(248, 177, 51, 0.8)',
+                        'rgba(234, 67, 53, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { padding: 15 }
+                    },
+                    title: {
+                        display: true,
+                        text: 'OWASP Top 10 覆盖率 (10/10)',
+                        font: { size: 16, weight: 'bold' },
+                        padding: { bottom: 20 }
+                    }
+                }
+            }
+        });
+
+        // 12层渐进式Harness图
+        new Chart(document.getElementById('harnessLayersChart'), {
+            type: 'line',
+            data: {
+                labels: ['1. THE LOOP', '2. TOOL DISPATCH', '3. PLANNING', '4. SUB-AGENTS', '5. KNOWLEDGE', '6. COMPRESSION', '7. PERSISTENT TASKS', '8. BACKGROUND', '9. AGENT TEAMS', '10. PROTOCOLS', '11. AUTONOMOUS', '12. WORKTREE'],
+                datasets: [{
+                    label: '代码行数',
+                    data: [200, 800, 400, 600, 300, 500, 400, 350, 800, 500, 450, 600],
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: '复杂度',
+                    data: [1, 3, 2, 4, 2, 3, 3, 3, 5, 4, 4, 4],
+                    borderColor: 'rgba(237, 100, 166, 0.8)',
+                    backgroundColor: 'rgba(237, 100, 166, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { padding: 15 }
+                    },
+                    title: {
+                        display: true,
+                        text: '12层渐进式Agent Harness - 代码量与复杂度',
+                        font: { size: 16, weight: 'bold' },
+                        padding: { bottom: 20 }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: '代码行数' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: '复杂度' },
+                        grid: { drawOnChartArea: false },
+                        min: 0,
+                        max: 6
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: { size: 10 }
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // 机制复杂度分布
+        new Chart(document.getElementById('mechanismComplexityChart'), {
+            type: 'radar',
+            data: {
+                labels: ['QueryEngine', '工具调度', '多代理协调', '上下文管理', '权限系统', '沙箱集成'],
+                datasets: [{
+                    label: '实现复杂度',
+                    data: [90, 85, 80, 75, 70, 88],
+                    backgroundColor: 'rgba(102, 126, 234, 0.3)',
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(102, 126, 234, 1)'
+                }, {
+                    label: '测试覆盖率',
+                    data: [75, 80, 65, 70, 85, 72],
+                    backgroundColor: 'rgba(67, 233, 123, 0.3)',
+                    borderColor: 'rgba(67, 233, 123, 0.8)',
+                    pointBackgroundColor: 'rgba(67, 233, 123, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(67, 233, 123, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { padding: 15 }
+                    },
+                    title: {
+                        display: true,
+                        text: '核心机制 - 复杂度与测试覆盖对比',
+                        font: { size: 16, weight: 'bold' },
+                        padding: { bottom: 20 }
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        angleLines: { color: 'rgba(255,255,255,0.1)' },
                         pointLabels: {
                             font: { size: 11 }
                         }

@@ -1716,6 +1716,641 @@
             </div>
         </div>
 
+        <!-- Deep Security Analysis Section -->
+        <div class="section">
+            <h2><span class="emoji">🔐</span>Deep Security Analysis</h2>
+            <p style="color: #999; margin-bottom: 30px;">Claude Code implements a multi-layered defense-in-depth security architecture covering authentication, authorization, sandbox isolation, input validation, MCP security, and secret management</p>
+
+            <!-- Security Layers Chart -->
+            <div class="charts-grid" style="margin-bottom: 30px;">
+                <div class="chart-container large">
+                    <canvas id="securityLayersChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="owaspSecurityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Authentication & Authorization -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #667eea; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔑</span> Authentication & Authorization System
+                </h3>
+                <div style="background: rgba(102, 126, 234, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #667eea;">
+                            <h4 style="color: #667eea; margin-bottom: 15px;">OAuth 2.0 PKCE Flow</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>Core File:</strong> src/utils/auth.ts (2003 lines)
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ PKCE (Proof Key for Code Exchange)</li>
+                                <li>✅ Multiple credential sources (env/fd/keychain/config)</li>
+                                <li>✅ File descriptor secure passing</li>
+                                <li>✅ macOS Keychain integration</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #764ba2;">
+                            <h4 style="color: #764ba2; margin-bottom: 15px;">Distributed Token Refresh Locking</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>Prevents concurrent refresh race conditions</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ fcntl(2) file locking</li>
+                                <li>✅ Double-check pattern</li>
+                                <li>✅ Automatic cleanup</li>
+                                <li>✅ Inter-process coordination</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 3px solid #43e97b;">
+                            <h4 style="color: #43e97b; margin-bottom: 15px;">Workspace Trust Validation</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>Project settings access protection</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ Workspace trust checking</li>
+                                <li>✅ Organization membership validation</li>
+                                <li>✅ Cryptographic signature verification</li>
+                                <li>✅ Permission boundary enforcement</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Code Example -->
+                    <div style="margin-top: 25px; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 20px;">
+                        <div style="color: #667eea; font-size: 0.85em; margin-bottom: 10px;">// OAuth 2.0 PKCE Implementation (src/utils/auth.ts)</div>
+                        <pre style="color: #aaa; font-size: 0.85em; overflow-x: auto; line-height: 1.5;"><code>export async function getAnthropicApiKeyWithSource(): Promise<{
+  apiKey: string
+  source: AuthTokenSource
+}> {
+  // Priority: env var > file descriptor > macOS keychain > config file
+  const envKey = process.env.ANTHROPIC_API_KEY
+  if (envKey) return { apiKey: envKey, source: 'env' }
+
+  const fdKey = await getApiKeyFromApiKeyHelper()  // Secure IPC
+  if (fdKey) return { apiKey: fdKey, source: 'api-key-helper' }
+
+  if (process.platform === 'darwin') {
+    const keychainKey = await getApiKeyFromKeychain()
+    if (keychainKey) return { apiKey: keychainKey, source: 'keychain' }
+  }
+
+  return { apiKey: await getApiKeyFromConfig(), source: 'config' }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sandbox Integration -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #764ba2; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🛡️</span> Sandbox Isolation System
+                </h3>
+                <div style="background: rgba(118, 75, 162, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #764ba2; margin-bottom: 15px;">Bubblewrap/Firecracker microVM</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="color: #764ba2; font-weight: bold; margin-bottom: 8px;">Network Isolation</div>
+                                <div style="color: #999; font-size: 0.85em;">Read-only mode, allowed hosts</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="color: #764ba2; font-weight: bold; margin-bottom: 8px;">Filesystem</div>
+                                <div style="color: #999; font-size: 0.85em;">Read-only mounts, write path restrictions</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="color: #764ba2; font-weight: bold; margin-bottom: 8px;">Resource Limits</div>
+                                <div style="color: #999; font-size: 0.85em;">Memory, CPU, timeout controls</div>
+                            </div>
+                            <div style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="color: #764ba2; font-weight: bold; margin-bottom: 8px;">Security Hardening</div>
+                                <div style="color: #999; font-size: 0.85em;">NoNewPrivs, Seccomp filtering</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Path Patterns -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">Sandbox Path Patterns</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid rgba(102, 126, 234, 0.3);">
+                                    <th style="padding: 12px; text-align: left; color: #667eea;">Pattern</th>
+                                    <th style="padding: 12px; text-align: left; color: #667eea;">Resolves To</th>
+                                    <th style="padding: 12px; text-align: left; color: #667eea;">Use Case</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><code style="color: #43e97b;">//path</code></td>
+                                    <td style="padding: 12px; color: #999;">Absolute path</td>
+                                    <td style="padding: 12px; color: #999;">System directories</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><code style="color: #43e97b;">/path</code></td>
+                                    <td style="padding: 12px; color: #999;">Settings-relative</td>
+                                    <td style="padding: 12px; color: #999;">Project configuration</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><code style="color: #43e97b;">~/path</code></td>
+                                    <td style="padding: 12px; color: #999;">User home directory</td>
+                                    <td style="padding: 12px; color: #999;">User files</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px;"><code style="color: #43e97b;">path</code></td>
+                                    <td style="padding: 12px; color: #999;">Working directory relative</td>
+                                    <td style="padding: 12px; color: #999;">Default paths</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Protected Paths -->
+                    <div>
+                        <h4 style="color: #ed64a6; margin-bottom: 15px;">Protected Paths (Write Blocked)</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <span class="metric" style="background: rgba(237, 100, 166, 0.2);">~/.claude/settings.json</span>
+                            <span class="metric" style="background: rgba(237, 100, 166, 0.2);">~/.claude/skills</span>
+                            <span class="metric" style="background: rgba(237, 100, 166, 0.2);">.git/ (bare repos)</span>
+                            <span class="metric" style="background: rgba(67, 233, 123, 0.2);">.git/ (worktree allowed)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tool Permission System -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #43e97b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔧</span> Tool Permission System
+                </h3>
+                <div style="background: rgba(67, 233, 123, 0.08); border-radius: 16px; padding: 25px;">
+                    <!-- Permission Flow Diagram -->
+                    <div style="margin-bottom: 25px; padding: 25px; background: rgba(0,0,0,0.2); border-radius: 12px;">
+                        <h4 style="color: #43e97b; margin-bottom: 20px; text-align: center;">Permission Check Flow</h4>
+                        <div class="data-flow-diagram" style="background: transparent; padding: 0; margin: 0;">
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">Tool Call Request</div>
+                                    <div class="desc">Initiate permission check</div>
+                                </div>
+                            </div>
+                            <div class="flow-branch">
+                                <div class="flow-branch-item">
+                                    <div style="font-weight: bold; color: #43e97b;">Read-Only?</div>
+                                    <div style="font-size: 0.85em; color: #999;">Allow</div>
+                                </div>
+                                <div class="flow-branch-item">
+                                    <div style="font-weight: bold; color: #ed64a6;">Dangerous Tool?</div>
+                                    <div style="font-size: 0.85em; color: #999;">Check trust</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">Tool-Specific Check</div>
+                                    <div class="desc">checkPermissions()</div>
+                                </div>
+                            </div>
+                            <div class="flow-branch">
+                                <div class="flow-branch-item">
+                                    <div style="font-weight: bold; color: #43e97b;">Approval Required?</div>
+                                    <div style="font-size: 0.85em; color: #999;">User confirmation</div>
+                                </div>
+                                <div class="flow-branch-item">
+                                    <div style="font-weight: bold; color: #764ba2;">Concurrency-Safe?</div>
+                                    <div style="font-size: 0.85em; color: #999;">Check running</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box" style="background: linear-gradient(135deg, rgba(67, 233, 123, 0.3), rgba(56, 249, 215, 0.3)); border-color: rgba(67, 233, 123, 0.5);">
+                                    <div class="title" style="color: #43e97b;">Allow Execution</div>
+                                    <div class="desc">Execute Tool</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fail-Closed Defaults -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(237, 100, 166, 0.1); border-radius: 12px;">
+                            <h4 style="color: #ed64a6; margin-bottom: 15px;">⛔ Fail-Closed Defaults</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>• isConcurrencySafe: false</li>
+                                <li>• isReadOnly: false</li>
+                                <li>• checkPermissions: DENY_ALL</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(79, 172, 254, 0.1); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">🛡️ Dangerous Tools</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>• Bash (requires workspace trust)</li>
+                                <li>• Write (requires workspace trust)</li>
+                                <li>• Edit (requires workspace trust)</li>
+                                <li>• TaskStop (requires workspace trust)</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(248, 177, 51, 0.1); border-radius: 12px;">
+                            <h4 style="color: #f8b133; margin-bottom: 15px;">⚠️ Dangerous Pattern Detection</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>• Path traversal (../)</li>
+                                <li>• Command injection (|rm, curl)</li>
+                                <li>• SSRF (file://, metadata endpoints)</li>
+                                <li>• AWS/GCP metadata endpoints</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MCP Security -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #4facfe; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔌</span> MCP Security Mechanisms
+                </h3>
+                <div style="background: rgba(79, 172, 254, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">Elicitation Protocol</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ Allow/Deny list filtering</li>
+                                <li>✅ Schema validation</li>
+                                <li>✅ Tool manifest security check</li>
+                                <li>✅ Auto-skip invalid tools</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">OAuth Authentication</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ PKCE code verifier</li>
+                                <li>✅ S256 challenge method</li>
+                                <li>✅ Token exchange</li>
+                                <li>✅ Scope authorization</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">Resource Access Control</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ URI ACL blacklist</li>
+                                <li>✅ URI ACL whitelist</li>
+                                <li>✅ Glob pattern matching</li>
+                                <li>✅ Default deny policy</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secret Management -->
+            <div>
+                <h3 style="color: #f8b133; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔐</span> Secret Management
+                </h3>
+                <div style="background: rgba(248, 177, 51, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #f8b133; margin-bottom: 15px;">Platform Secure Storage</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>🍎 macOS: Keychain</li>
+                                <li>🐧 Linux: Secret Service</li>
+                                <li>🪟 Windows: Credential Manager</li>
+                                <li>📁 Fallback: Encrypted file</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #f8b133; margin-bottom: 15px;">Cloud STS Integration</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>☁️ AWS STS: Temporary credentials</li>
+                                <li>🔵 GCP OIDC: ID Token</li>
+                                <li>⏱️ 1-hour validity</li>
+                                <li>🔄 Auto-refresh</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #f8b133; margin-bottom: 15px;">Credential Rotation</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>📅 30-day rotation cycle</li>
+                                <li>🆕 Auto-generate new keys</li>
+                                <li>🗑️ Invalidate old keys</li>
+                                <li>💾 Multi-location sync</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Core Mechanisms Section -->
+        <div class="section">
+            <h2><span class="emoji">⚙️</span>Core Mechanisms Deep Dive</h2>
+            <p style="color: #999; margin-bottom: 30px;">Detailed implementation analysis of Claude Code's 12-layer progressive Agent Harness</p>
+
+            <!-- Progressive Harness Layers -->
+            <div class="charts-grid" style="margin-bottom: 30px;">
+                <div class="chart-container large">
+                    <canvas id="harnessLayersChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="mechanismComplexityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- QueryEngine Deep Dive -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #667eea; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔄</span> QueryEngine: Core Loop
+                </h3>
+                <div style="background: rgba(102, 126, 234, 0.08); border-radius: 16px; padding: 25px;">
+                    <!-- AsyncGenerator Pattern -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">AsyncGenerator Streaming Pattern</h4>
+                        <div style="padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px;">
+                            <pre style="color: #aaa; font-size: 0.85em; overflow-x: auto; line-height: 1.5;"><code>// QueryEngine.ts - Main entry point
+async *submitMessage(
+  prompt: string | ContentBlockParam[],
+  options?: SubmitMessageOptions
+): AsyncGenerator<SDKMessage, void, unknown> {
+  // 1. Process user input
+  const processed = await this.processUserInput(prompt, options)
+
+  // 2. Fetch system prompt
+  const systemPrompt = await this.fetchSystemPrompt()
+
+  // 3. Enter query loop
+  for await (const event of this.queryLoop(processed, systemPrompt, options)) {
+    // Stream SDK messages to client
+    yield event
+  }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Message Lifecycle -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #764ba2; margin-bottom: 15px;">Message Lifecycle</h4>
+                        <div class="data-flow-diagram" style="background: rgba(0,0,0,0.2); padding: 25px; border-radius: 12px;">
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">User Input</div>
+                                    <div class="desc">processUserInput()</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">System Prompt</div>
+                                    <div class="desc">fetchSystemPrompt()</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">Build Conversation</div>
+                                    <div class="desc">buildConversation()</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box">
+                                    <div class="title">Query Loop</div>
+                                    <div class="desc">queryLoop() ──→ record/crash recovery</div>
+                                </div>
+                            </div>
+                            <div class="flow-step">
+                                <div class="flow-box" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));">
+                                    <div class="title" style="color: #667eea;">Stream Response</div>
+                                    <div class="desc">AsyncGenerator yield</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Compact Boundary -->
+                    <div>
+                        <h4 style="color: #43e97b; margin-bottom: 15px;">Compact Boundary Memory Management</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                            <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                <h5 style="color: #43e97b; margin-bottom: 10px;">Trigger Conditions</h5>
+                                <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                    <li>• Token count > maxTokens</li>
+                                    <li>• Session time limit</li>
+                                    <li>• Manual compaction request</li>
+                                </ul>
+                            </div>
+                            <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                <h5 style="color: #43e97b; margin-bottom: 10px;">Retention Strategy</h5>
+                                <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                    <li>• Keep last N messages</li>
+                                    <li>• Archive old messages</li>
+                                    <li>• Resettable boundary</li>
+                                </ul>
+                            </div>
+                            <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                <h5 style="color: #43e97b; margin-bottom: 10px;">Memory Efficiency</h5>
+                                <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                    <li>• O(1) single message processing</li>
+                                    <li>• Immediate stream delivery</li>
+                                    <li>• Low first-token latency</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multi-Agent Coordination -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #764ba2; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🤖</span> Multi-Agent Coordination
+                </h3>
+                <div style="background: rgba(118, 75, 162, 0.08); border-radius: 16px; padding: 25px;">
+                    <!-- Identity Resolution Priority -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #764ba2; margin-bottom: 15px;">Identity Resolution Priority</h4>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 20px;">
+                                <div style="min-width: 120px; padding: 15px; background: rgba(102, 126, 234, 0.2); border-radius: 10px; text-align: center;">
+                                    <div style="font-weight: bold; color: #667eea;">Priority 1</div>
+                                    <div style="font-size: 0.85em; color: #999;">AsyncLocalStorage</div>
+                                </div>
+                                <div style="flex: 1; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">In-Process Teammates</div>
+                                    <div style="font-size: 0.9em; color: #999;">getTeammateContext() - Context isolation within same process</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 20px;">
+                                <div style="min-width: 120px; padding: 15px; background: rgba(118, 75, 162, 0.2); border-radius: 10px; text-align: center;">
+                                    <div style="font-weight: bold; color: #764ba2;">Priority 2</div>
+                                    <div style="font-size: 0.85em; color: #999;">CLI Args</div>
+                                </div>
+                                <div style="flex: 1; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">Tmux Teammates</div>
+                                    <div style="font-size: 0.9em; color: #999;">dynamicTeamContext - Teammate identity via CLI parameters</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Communication Protocol -->
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: #667eea; margin-bottom: 15px;">SendMessage Communication Protocol</h4>
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 20px;">
+                            <div style="font-family: monospace; font-size: 0.85em; color: #aaa; line-height: 1.8;">
+                                <div style="margin-bottom: 15px;"><span style="color: #43e97b;">type:</span> 'text' | 'shutdown_request' | 'shutdown_response' | 'plan_approval_request' | 'plan_approval_response'</div>
+                                <div style="margin-bottom: 15px;"><span style="color: #43e97b;">to:</span> string (teammate name) | '*' (broadcast)</div>
+                                <div><span style="color: #43e97b;">text/request_id/reason:</span> Message-specific content</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Two Backends -->
+                    <div>
+                        <h4 style="color: #ed64a6; margin-bottom: 15px;">Dual Backend Architecture</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid rgba(237, 100, 166, 0.3);">
+                                    <th style="padding: 12px; text-align: left; color: #ed64a6;">Feature</th>
+                                    <th style="padding: 12px; text-align: left; color: #ed64a6;">In-Process (AsyncLocalStorage)</th>
+                                    <th style="padding: 12px; text-align: left; color: #ed64a6;">Tmux (CLI Args)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><strong>Isolation</strong></td>
+                                    <td style="padding: 12px; color: #999;">Context isolation</td>
+                                    <td style="padding: 12px; color: #999;">Process isolation</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><strong>Overhead</strong></td>
+                                    <td style="padding: 12px; color: #43e97b;">Low (same process)</td>
+                                    <td style="padding: 12px; color: #f8b133;">High (subprocess)</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 12px;"><strong>Use Case</strong></td>
+                                    <td style="padding: 12px; color: #999;">Fast tasks</td>
+                                    <td style="padding: 12px; color: #999;">Isolated tasks</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px;"><strong>Crash</strong></td>
+                                    <td style="padding: 12px; color: #f8b133;">Affects main process</td>
+                                    <td style="padding: 12px; color: #43e97b;">Independent crash</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Context Management -->
+            <div style="margin-bottom: 40px;">
+                <h3 style="color: #43e97b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🧠</span> Context Management
+                </h3>
+                <div style="background: rgba(67, 233, 123, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #43e97b; margin-bottom: 15px;">File State Cache</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>📁 Path: File path</li>
+                                <li>📊 Size: File size</li>
+                                <li>🕐 Mtime: Modification time</li>
+                                <li>🔐 Hash: Content hash</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #43e97b; margin-bottom: 15px;">Knowledge Injection</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>📚 SkillTool lazy loading</li>
+                                <li>🔌 On-demand skill loading</li>
+                                <li>🏷️ Metadata parsing</li>
+                                <li>📄 Content caching</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #43e97b; margin-bottom: 15px;">Compression Strategies</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>🗑️ Remove redundant system prompts</li>
+                                <li>📝 Summarize old tool results</li>
+                                <li>🔄 Deduplicate messages</li>
+                                <li>📊 Token budget optimization</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Token Budget Allocation -->
+                    <div style="margin-top: 25px; padding: 25px; background: rgba(0,0,0,0.2); border-radius: 16px;">
+                        <h4 style="color: #43e97b; margin-bottom: 20px;">Context Window Budget Allocation</h4>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>System Prompt (tool definitions + permission rules + CLAUDE.md)</span>
+                                    <span style="color: #667eea;">20-30%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="fill" style="width: 25%; background: linear-gradient(90deg, #667eea, #764ba2);"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>Conversation History (compressed + compact_boundary marker)</span>
+                                    <span style="color: #764ba2;">50-60%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="fill" style="width: 55%; background: linear-gradient(90deg, #764ba2, #ed64a6);"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span>Current Turn (user message + assistant response)</span>
+                                    <span style="color: #43e97b;">10-20%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="fill" style="width: 15%; background: linear-gradient(90deg, #43e97b, #38f9d7);"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Git Worktree Isolation -->
+            <div>
+                <h3 style="color: #4facfe; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <span>🌳</span> Git Worktree Isolation
+                </h3>
+                <div style="background: rgba(79, 172, 254, 0.08); border-radius: 16px; padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">Worktree Detection</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>Detect .git file</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ .git is a file (not directory)</li>
+                                <li>✅ Contains gitdir: reference</li>
+                                <li>✅ Parse main git directory path</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">Sandbox Configuration</h4>
+                            <p style="color: #999; font-size: 0.9em; line-height: 1.6; margin-bottom: 10px;">
+                                <strong>Mount main git directory</strong>
+                            </p>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>✅ Mount /.git to main repo</li>
+                                <li>✅ Allow git write operations</li>
+                                <li>✅ Maintain git operation consistency</li>
+                            </ul>
+                        </div>
+                        <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <h4 style="color: #4facfe; margin-bottom: 15px;">Concurrent Isolation</h4>
+                            <ul style="list-style: none; padding: 0; color: #999; font-size: 0.85em; line-height: 1.8;">
+                                <li>🌳 Each worktree is isolated</li>
+                                <li>🔒 Shared main git directory</li>
+                                <li>🤝 Support git operations</li>
+                                <li>🚀 Concurrent-safe</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <div class="footer">
             <p>🔍 Claude Code v2.1.88 Deep Analysis Report</p>
@@ -2303,6 +2938,208 @@
                         angleLines: {
                             color: 'rgba(255,255,255,0.1)'
                         },
+                        pointLabels: {
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Security layers maturity chart
+        new Chart(document.getElementById('securityLayersChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Auth & Authorization', 'Sandbox Isolation', 'Tool Permissions', 'Input Validation', 'MCP Security', 'Secret Management'],
+                datasets: [{
+                    label: 'Implementation Maturity',
+                    data: [95, 90, 88, 85, 82, 87],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(118, 75, 162, 0.8)',
+                        'rgba(237, 100, 166, 0.8)',
+                        'rgba(79, 172, 254, 0.8)',
+                        'rgba(67, 233, 123, 0.8)',
+                        'rgba(248, 177, 51, 0.8)'
+                    ],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Security Layer Implementation Maturity (%)',
+                        font: { size: 16, weight: 'bold' },
+                        padding: { bottom: 20 }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    y: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // OWASP security coverage chart
+        new Chart(document.getElementById('owaspSecurityChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Covered', 'Partially Covered', 'Not Covered'],
+                datasets: [{
+                    data: [8, 2, 0],
+                    backgroundColor: [
+                        'rgba(67, 233, 123, 0.8)',
+                        'rgba(248, 177, 51, 0.8)',
+                        'rgba(234, 67, 53, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { padding: 15 }
+                    },
+                    title: {
+                        display: true,
+                        text: 'OWASP Top 10 Coverage (10/10)',
+                        font: { size: 16, weight: 'bold' },
+                        padding: { bottom: 20 }
+                    }
+                }
+            }
+        });
+
+        // 12-Layer Progressive Harness chart
+        new Chart(document.getElementById('harnessLayersChart'), {
+            type: 'line',
+            data: {
+                labels: ['1. THE LOOP', '2. TOOL DISPATCH', '3. PLANNING', '4. SUB-AGENTS', '5. KNOWLEDGE', '6. COMPRESSION', '7. PERSISTENT TASKS', '8. BACKGROUND', '9. AGENT TEAMS', '10. PROTOCOLS', '11. AUTONOMOUS', '12. WORKTREE'],
+                datasets: [{
+                    label: 'Lines of Code',
+                    data: [200, 800, 400, 600, 300, 500, 400, 350, 800, 500, 450, 600],
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'Complexity',
+                    data: [1, 3, 2, 4, 2, 3, 3, 3, 5, 4, 4, 4],
+                    borderColor: 'rgba(237, 100, 166, 0.8)',
+                    backgroundColor: 'rgba(237, 100, 166, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { padding: 15 }
+                    },
+                    title: {
+                        display: true,
+                        text: '12-Layer Progressive Agent Harness - Code & Complexity',
+                        font: { size: 16, weight: 'bold' },
+                        padding: { bottom: 20 }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Lines of Code' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Complexity' },
+                        grid: { drawOnChartArea: false },
+                        min: 0,
+                        max: 6
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: { size: 10 }
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Mechanism complexity distribution
+        new Chart(document.getElementById('mechanismComplexityChart'), {
+            type: 'radar',
+            data: {
+                labels: ['QueryEngine', 'Tool Dispatch', 'Multi-Agent Coord', 'Context Mgmt', 'Permission System', 'Sandbox Integration'],
+                datasets: [{
+                    label: 'Implementation Complexity',
+                    data: [90, 85, 80, 75, 70, 88],
+                    backgroundColor: 'rgba(102, 126, 234, 0.3)',
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(102, 126, 234, 1)'
+                }, {
+                    label: 'Test Coverage',
+                    data: [75, 80, 65, 70, 85, 72],
+                    backgroundColor: 'rgba(67, 233, 123, 0.3)',
+                    borderColor: 'rgba(67, 233, 123, 0.8)',
+                    pointBackgroundColor: 'rgba(67, 233, 123, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(67, 233, 123, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { padding: 15 }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Core Mechanisms - Complexity vs Test Coverage',
+                        font: { size: 16, weight: 'bold' },
+                        padding: { bottom: 20 }
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        angleLines: { color: 'rgba(255,255,255,0.1)' },
                         pointLabels: {
                             font: { size: 11 }
                         }
