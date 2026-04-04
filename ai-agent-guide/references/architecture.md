@@ -1,233 +1,329 @@
-# Claude Code Agent Architecture Deep-Dive
+# Agent Architecture Patterns
 
-Concrete implementation patterns extracted from the Claude Code source code.
+Generalized architecture patterns extracted from production agent systems.
 
-## Directory Structure
+## Table of Contents
+
+1. [Agent Type Hierarchy](#agent-type-hierarchy)
+2. [Tool Filtering Pipeline](#tool-filtering-pipeline)
+3. [Agent Execution Engine](#agent-execution-engine)
+4. [Async Agent Lifecycle](#async-agent-lifecycle)
+5. [Coordinator Architecture](#coordinator-architecture)
+6. [Context Inheritance Pattern](#context-inheritance-pattern)
+7. [Message Passing System](#message-passing-system)
+
+## Agent Type Hierarchy
+
+### Four Source Layers
+
+Agents are defined at different trust levels, each overriding the last:
 
 ```
-src/
-├── tools/AgentTool/           # Agent tool implementation
-│   ├── prompt.ts              # Tool description and usage guidance
-│   ├── agentToolUtils.ts      # Tool filtering, lifecycle, progress
-│   ├── forkSubagent.ts        # Fork pattern (context inheritance)
-│   ├── runAgent.ts           # Agent execution engine
-│   ├── loadAgentsDir.ts       # Agent definition loading & parsing
-│   ├── builtInAgents.ts       # Built-in agent registry
-│   ├── agentMemory.ts        # Persistent memory system
-│   ├── agentMemorySnapshot.ts # Memory snapshot management
-│   ├── constants.ts          # Tool name constants
-│   └── built-in/
-│       ├── generalPurposeAgent.ts  # Full-capability agent
-│       ├── exploreAgent.ts         # Read-only search agent
-│       ├── planAgent.ts           # Architecture planning agent
-│       ├── verificationAgent.ts   # Post-implementation verification
-│       └── claudeCodeGuideAgent.ts # Claude Code docs expert
-├── coordinator/               # Multi-agent orchestration
-│   ├── AgentCoordinator.ts    # Central coordination layer
-│   ├── TeammateImpl.ts        # Teammate agent implementation
-│   └── WorktreeManager.ts     # Worktree isolation management
-├── utils/
-│   ├── teammateMailbox.ts    # File-based message passing
-│   ├── teammateContext.ts     # In-process teammate detection
-│   └── swarm/                # Swarm utilities
-│       ├── teammateModel.ts   # Teammate model configuration
-│       ├── teammateInit.ts    # Teammate initialization
-│       └── teamHelpers.ts     # Team coordination helpers
-└── tasks/
-    └── LocalAgentTask/       # Async agent task management
+Layer 1: Built-in (platform defaults)
+  → Read-only explorer, general-purpose executor, planning agent
+  → Highest trust, system-managed
+
+Layer 2: Plugin agents
+  → Third-party extensions with their own agents
+  → Medium trust, plugin-scoped
+
+Layer 3: User-defined agents
+  → Personal customization in user settings
+  → User trust level, user-scoped
+
+Layer 4: Project-defined agents
+  → Team/project-specific agents in project config
+  → Project trust level, project-scoped
+
+Layer 5: Policy/managed agents
+  → Organization-imposed agents via management
+  → Policy-enforced, org-scoped
 ```
 
-## AgentDefinition Type Hierarchy
+**Resolution rule**: Later layers override earlier ones for the same name. Built-in agents provide the baseline, project agents have the final say.
 
-```typescript
-// Base — common fields for all agents
-BaseAgentDefinition {
-  agentType: string           // Unique identifier
-  whenToUse: string           // Routing signal for orchestrator
-  tools?: string[]            // Tool allowlist
-  disallowedTools?: string[]  // Tool denylist
-  model?: string              // LLM model selection
-  maxTurns?: number           // Loop limit
-  permissionMode?: PermissionMode
-  memory?: 'user' | 'project' | 'local'
-  isolation?: 'worktree' | 'remote'
-  background?: boolean         // Always run async
-  omitClaudeMd?: boolean       // Skip CLAUDE.md loading
-}
+### Agent Definition Schema
 
-// Built-in — dynamic system prompts
-BuiltInAgentDefinition extends BaseAgentDefinition {
-  source: 'built-in'
-  getSystemPrompt: (ctx) => string  // Dynamic prompt generation
-}
+Every agent definition includes:
 
-// Custom — user/project-defined agents
-CustomAgentDefinition extends BaseAgentDefinition {
-  source: SettingSource  // 'userSettings' | 'projectSettings' | etc.
-  getSystemPrompt: () => string
-  filename?: string
-}
-
-// Plugin — third-party extensions
-PluginAgentDefinition extends BaseAgentDefinition {
-  source: 'plugin'
-  plugin: string  // Plugin identifier
-}
 ```
+Core:
+  name:          Unique identifier (lowercase, hyphen-separated)
+  description:   When-to-use trigger (primary routing signal for orchestrator)
+
+Execution:
+  model:         LLM tier to use (match capability to task complexity)
+  tools:         Tool allowlist (restrict to minimum needed)
+  disallowedTools: Tool denylist (explicitly block dangerous tools)
+  maxTurns:      Agentic loop limit (prevent runaway agents)
+  permissionMode: auto | plan | bypass | bubble
+
+Behavior:
+  omitClaudeMd:  Skip project convention loading (saves tokens for sub-agents)
+  memory:        Memory scope: user | project | local
+  isolation:     Isolation mode: none | filesystem | process
+  background:    Whether to run asynchronously
+```
+
+### Dynamic System Prompts
+
+Built-in agents use **dynamic prompt generation** — a function receives context (available tools, working directories) and produces the system prompt at spawn time. This allows the prompt to reflect:
+- Which tools are actually available
+- The current working directory structure
+- Environment-specific details
+
+Custom agents typically use **static prompts** — a fixed string defined in the agent file. Simpler but less adaptive.
 
 ## Tool Filtering Pipeline
 
-```typescript
-// From agentToolUtils.ts — layered filtering
-function filterToolsForAgent(tools, { isBuiltIn, isAsync, permissionMode }) {
-  return tools.filter(tool => {
-    // 1. MCP tools always pass through
-    if (tool.name.startsWith('mcp__')) return true
-    // 2. Global disallow list (dangerous tools)
-    if (ALL_AGENT_DISALLOWED_TO_TOOLS.has(tool.name)) return false
-    // 3. Custom agent extra restrictions
-    if (!isBuiltIn && CUSTOM_AGENT_DISALLOWED_TOOLS.has(tool.name)) return false
-    // 4. Async agents: only safe tools allowed
-    if (isAsync && !ASYNC_AGENT_ALLOWED_TOOLS.has(tool.name)) return false
-    return true
-  })
-}
+### Layered Restriction (Never Expands)
 
-function resolveAgentTools(agentDef, availableTools, isAsync, isMainThread) {
-  // 1. Apply global filtering (unless main thread)
-  // 2. Apply agent's disallowedTools
-  // 3. Expand agent's tools (handle wildcards)
-  // 4. Validate against available tools
-  // 5. Return resolved set with valid/invalid tracking
-}
 ```
+All available tools
+  │
+  ├─ Layer 1: Global deny list
+  │   Remove tools dangerous for ALL agents (e.g., session management,
+  │   configuration changes that affect shared state)
+  │
+  ├─ Layer 2: Source-specific deny list
+  │   Additional restrictions for user/project-defined agents (not built-in)
+  │   e.g., remove agent-spawning tools to prevent recursive delegation
+  │
+  ├─ Layer 3: Background agent filter
+  │   For async/background agents: only tools safe for unattended execution
+  │   e.g., block file-write tools, dangerous shell commands
+  │
+  ├─ Layer 4: Agent-specific deny list
+  │   Per-agent additional restrictions from definition
+  │
+  ├─ Layer 5: Agent-specific allow list
+  │   If defined, ONLY these tools are available (whitelist mode)
+  │   If omitted, all tools passing previous layers are available
+  │
+  └─ Resolved tool set
+```
+
+### Wildcard Expansion
+
+Agent definitions can use wildcards for tool matching:
+- `tools: ['Read', 'Grep', 'Glob']` — explicit list (recommended)
+- `tools: ['*']` — all tools (maximum flexibility, maximum risk)
+
+Wildcard expansion resolves tool names against the available tool registry, with validation for unknown tools.
+
+## Agent Execution Engine
+
+### Core Loop
+
+```
+Initialize: resolve model, filter tools, build system prompt, inject context
+  │
+  ├─ For each turn:
+  │   ├─ Send conversation to LLM
+  │   ├─ Process response:
+  │   │   ├─ Text output → accumulate as agent message
+  │   │   ├─ Tool use → validate permissions → execute → return result
+  │   │   └─ Thinking → accumulate (if model supports extended thinking)
+  │   ├─ Check turn limit → if reached, break with summary
+  │   └─ Yield progress updates
+  │
+  └─ Finalize: extract result, handle abort, cleanup
+```
+
+### System Prompt Assembly
+
+When an agent spawns, the system prompt is assembled dynamically:
+
+1. **Agent prompt**: Generated by the agent's prompt function (or static string)
+2. **Environment details**: Inject current working directory, available tools list
+3. **User context**: Project-specific context (unless omitted)
+4. **System context**: Platform-level context (environment info, feature flags)
+
+This assembly happens at spawn time, not definition time, ensuring the agent sees the current state.
+
+### Turn Limit Enforcement
+
+When an agent reaches its maximum turn count:
+1. Stop the agentic loop
+2. Generate a summary of what was accomplished
+3. Return the partial result to the parent
+4. Log the limit event for observability
 
 ## Async Agent Lifecycle
 
-```typescript
-// From agentToolUtils.ts — the complete lifecycle
-async function runAsyncAgentLifecycle({
-  taskId, abortController, makeStream, metadata, ...
-}) {
-  const tracker = createProgressTracker()
+### State Flow
 
-  for await (const message of makeStream(onCacheSafeParams)) {
-    agentMessages.push(message)
-    updateProgressFromMessage(tracker, message, ...)
-    updateAsyncAgentProgress(taskId, progress, setAppState)
-    emitTaskProgress(tracker, taskId, ...)
-  }
-
-  // IMPORTANT: Complete BEFORE safety classification
-  completeAsyncAgent(agentResult, setAppState)
-
-  const handoffWarning = await classifyHandoffIfNeeded(...)
-  if (handoffWarning) finalMessage = handoffWarning + '\n\n' + finalMessage
-
-  enqueueAgentNotification({ taskId, status: 'completed', ... })
-}
 ```
+Spawn → Track progress → Stream messages → Complete → Classify → Notify
+                                         │
+                                    ├─ Abort: extract partial result
+                                    ├─ Error: fail task, enqueue error notification
+                                    └─ Timeout: heartbeat kills task
+```
+
+### Progress Tracking
+
+Accumulated per turn:
+- **Token count**: Total tokens consumed (input + output)
+- **Tool use count**: Number of tool invocations
+- **Last activity**: Description of the most recent action (for idle timeout)
+
+This data enables:
+- Cost estimation and budget enforcement
+- Activity detection for idle timeouts
+- Usage reporting in orchestrator dashboards
+
+### Partial Result Preservation
+
+When an agent is killed (abort or timeout):
+1. Scan accumulated messages in reverse order
+2. Extract the last text content from an assistant message
+3. Return this partial result to the parent orchestrator
+4. The parent can decide whether to retry, reassign, or accept the partial result
+
+This prevents total work loss on termination.
+
+### Completion Before Post-Processing
+
+**Critical optimization**: Mark the task as *completed* before running slow post-processing (safety classification, worktree result extraction). These operations may be slow (API calls, git operations), and downstream consumers should be unblocked immediately upon task completion.
 
 ## Coordinator Architecture
 
-```typescript
-// From AgentCoordinator.ts — key internal classes
+### Three Core Components
 
-class AgentRegistry {
-  // Agent CRUD with name indexing
-  register(agent): void
-  unregister(agentId): AgentState | undefined
-  get(agentId): AgentState | undefined
-  getIdleAgents(capabilities?): AgentState[]
-  assignTask(agentId, taskId): void
-  unassignTask(agentId, taskId): void
-  getIdleAgentsSorted(): AgentState[]  // Least recently active first
-  countByStatus(status): number
-  getIdleAgentsTimeout(timeoutMs): AgentState[]
-}
+#### 1. Agent Registry
 
-class TaskBoard {
-  // Task lifecycle with dependency tracking
-  createTask(task): CoordinatorTask
-  getReadyTasks(): CoordinatorTask[]  // Dependencies satisfied
-  getPendingTasksSorted(): CoordinatorTask[]  // By priority
-  assignTask(taskId, agentId): boolean
-  completeTask(taskId): void      // Unblock dependents
-  failTask(taskId, error): void
-  cleanupOldTasks(olderThanMs): string[]
-}
+Tracks the state and capabilities of all active agents:
 
-class MessageBus {
-  send(message): string           // Direct or broadcast
-  getPending(agentId): AgentMessage[]
-  peekPending(agentId): AgentMessage[]  // Non-consuming
-}
+```
+Capabilities tracked:
+  - agentId: unique identifier
+  - status: spawned | idle | busy | completed | failed | killed
+  - currentTaskId: what task the agent is working on (if any)
+  - capabilities: what the agent can do (tools, model tier)
+  - lastActiveTime: for load balancing (assign least-recently-active first)
 ```
 
-## Fork Subagent Pattern
+Key operations:
+- `register(agent)`: Add new agent to registry
+- `unregister(agentId)`: Remove agent, return final state
+- `getIdleAgents(filter?)`: Find available agents, optionally filtered by capability
+- `getIdleAgentsSorted()`: Sort by last active time (oldest first = most idle)
 
-```typescript
-// From forkSubagent.ts — context inheritance for cheap parallelism
+#### 2. Task Board
 
-// Fork inherits parent's conversation by:
-// 1. Keeping the full parent assistant message (all tool_use blocks)
-// 2. Building placeholder tool_results for every tool_use
-// 3. Appending the child-specific directive as final text block
-//
-// Result: [...history, assistant(all_tool_uses), user(placeholder_results..., directive)]
-// Only the final text block differs per child → maximizes prompt cache hits
+Manages the task lifecycle with dependency tracking:
 
-function buildForkedMessages(directive, assistantMessage): MessageType[] {
-  const fullAssistantMessage = { ...assistantMessage, content: [...assistantMessage.content] }
-  const toolUseBlocks = assistantMessage.message.content.filter(b => b.type === 'tool_use')
-  const toolResultBlocks = toolUseBlocks.map(block => ({
-    type: 'tool_result',
-    tool_use_id: block.id,
-    content: [{ type: 'text', text: 'Fork started — processing in background' }]
-  }))
-  return [fullAssistantMessage, { type: 'user', content: [...toolResultBlocks, { type: 'text', text: childMessage }] }]
-}
+```
+Task states:
+  pending → ready (dependencies satisfied) → assigned → running → completed
+                                                              → failed
+```
+
+Key operations:
+- `createTask(task)`: Add with priority and optional dependency list
+- `getReadyTasks()`: Return tasks where all dependencies are completed
+- `assignTask(taskId, agentId)`: Link task to agent
+- `completeTask(taskId)`: Mark done, unblock dependent tasks
+- `failTask(taskId, error)`: Mark failed, unblock dependents that should still run
+- `cleanupOldTasks(olderThanMs)`: Remove completed tasks older than threshold
+
+#### 3. Message Bus
+
+Handles inter-agent communication:
+
+```
+Message types:
+  - Direct: sender → specific recipient
+  - Broadcast: coordinator → all agents (use sparingly — each message multiplies cost)
+  - Protocol: structured control messages (shutdown requests, plan approvals)
+
+Features:
+  - File-based persistence (survives process crashes)
+  - Concurrency control (file-level locking)
+  - Automatic delivery ordering
+  - Read receipts (message locking)
+```
+
+### Task Assignment Algorithm
+
+```
+1. Collect all ready tasks (dependencies satisfied)
+2. Sort by: priority (highest first), then creation time (oldest first)
+3. For each ready task:
+   a. Find idle agents with matching capabilities
+   b. If multiple candidates: pick least-recently-active (load balancing)
+   c. Assign task → agent transitions to busy
+4. If no capable idle agent: task waits in queue
+```
+
+On task completion:
+1. Mark task completed
+2. Check if any blocked tasks are now unblocked
+3. Attempt to assign newly ready tasks to idle agents
+
+## Context Inheritance Pattern
+
+### How It Works
+
+When spawning parallel sub-tasks that need the parent's accumulated context:
+
+```
+Parent conversation history
+  + Parent's assistant message (all tool_use blocks preserved)
+  + Placeholder tool results for every tool_use (identical across all children)
+  + Child-specific directive (ONLY difference per child)
+```
+
+### Cache Optimization
+
+All children produce **byte-identical request prefixes** — only the final text block differs. This maximizes LLM prompt cache hits, reducing cost and latency proportionally to the shared prefix size.
+
+### When to Use Context Inheritance
+
+| Scenario | Approach | Why |
+|---|---|---|
+| Parallel sub-tasks from same analysis | Inheritance | Shared context avoids re-explaining background |
+| Independent review of different files | Fresh start | Reviewer doesn't need parent's findings |
+| Sub-task needs parent's specific findings | Inheritance + directive | "Based on the auth module you analyzed..." |
+| Completely different domain | Fresh start | No relevant context to inherit |
+
+### Anti-Recursion Guard
+
+Agents must detect when they are themselves a child to prevent infinite delegation:
+
+```
+Detection: Check conversation history for inheritance markers
+  (e.g., a special boilerplate tag injected during fork/spawn)
+  If found → this agent IS a child → do NOT spawn further children
 ```
 
 ## Message Passing System
 
-```typescript
-// From teammateMailbox.ts — file-based async messaging
+### File-Based Mailboxes
 
-// Messages stored as JSON files
-// Path: .claude/teams/{team}/inboxes/{agent}.json
-// Features:
-// - Read receipts (message locking)
-// - Concurrency control (file-level locking)
-// - Automatic delivery ordering
+```
+Storage:  .teams/{team}/inboxes/{agent-id}.json
+Delivery: Ordered queue, polling or push notification
+Locking: File-level locks prevent concurrent access
+Receipts: Messages locked on read until processing completes
 ```
 
-## Built-in Agent Configurations
+### Message Flow Patterns
 
-### General Purpose Agent
-- `tools: ['*']` — all tools
-- No model override (uses default)
-- No turn limit specified
-- Full CLAUDE.md loaded
-- Prompt: "Complete the task fully — don't gold-plate, but don't leave it half-done"
+**Request-Response**: Agent A asks, Agent B replies
+```
+A → B: { type: "request", id: "req-1", content: "What's the API schema?" }
+B → A: { type: "response", requestId: "req-1", content: "Schema is..." }
+```
 
-### Explore Agent
-- `disallowedTools: [AgentTool, ExitPlanMode, FileEdit, FileWrite, NotebookEdit]`
-- Model: `inherit` (internal) / `haiku` (external) — fast for search
-- `omitClaudeMd: true` — saves tokens, main agent has full context
-- Key rule: "parallel tool calls for speed"
+**Notification**: Agent completes task, coordinator notified
+```
+Agent → Coordinator: { type: "notification", status: "completed", taskId: "..." }
+```
 
-### Plan Agent
-- Same disallowed tools as Explore
-- Model: `inherit`
-- `omitClaudeMd: true`
-- Structured output: ends with "Critical Files for Implementation" section
-- Process: Understand → Explore → Design → Detail Plan
-
-### Key Design Decisions
-
-1. **Explore uses haiku model**: Read-only search doesn't need frontier model
-2. **Plan uses inherit model**: Needs same context understanding as main agent
-3. **Explore omits CLAUDE.md**: Saves ~5-15 Gtok/week across millions of spawns
-4. **No AgentTool in subagents**: Prevents recursive delegation depth issues
-5. **Worktree isolation**: Default for parallel implementation agents
+**Protocol**: Graceful shutdown
+```
+Coordinator → Agent: { type: "shutdown_request", reason: "Task complete" }
+Agent → Coordinator: { type: "shutdown_response", approve: true }
+```
