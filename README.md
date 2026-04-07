@@ -41,6 +41,8 @@ Claude Code is a sophisticated AI agent system that extends the basic agent loop
 
 ### View the Reports
 
+**Live Online**: [https://bigdong89.github.io/claude-code-analysis-report/](https://bigdong89.github.io/claude-code-analysis-report/)
+
 1. **Markdown Report** (for reading in any text editor or markdown viewer):
    ```bash
    cat ANALYSIS_REPORT.md
