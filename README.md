@@ -3,6 +3,11 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/claude--code-2.1.88-purple.svg)](https://github.com/anthropics/claude-code)
 [![Analysis Date](https://img.shields.io/badge/analysis-2026--04--01-green.svg)](https://github.com/anthropics/claude-code)
+[![GitHub stars](https://img.shields.io/github/stars/bigdong89/claude-code-analysis-report?style=social)](https://github.com/bigdong89/claude-code-analysis-report/stargazers)
+[![Live Demo](https://img.shields.io/badge/demo-live_success.svg)](https://bigdong89.github.io/claude-code-analysis-report/)
+[![Files Analyzed](https://img.sh.shields.io/badge/files-1884-blue.svg)]()
+[![Lines of Code](https://img.shields.io/badge/LOC-512K-orange.svg)]()
+[![Tools](https://img.shields.io/badge/tools-43%2B-green.svg)]()
 
 > 🔍 Deep source code analysis of Claude Code v2.1.88 - A production-grade AI agent harness
 

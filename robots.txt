@@ -1,0 +1,13 @@
+# robots.txt for claude-code-analysis-report
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://bigdong89.github.io/claude-code-analysis-report/sitemap.xml
+
+# Disallow AI training crawlers (optional, comment out to allow)
+User-agent: GPTBot
+Disallow: /
+User-agent: GoogleOther
+Disallow: /
